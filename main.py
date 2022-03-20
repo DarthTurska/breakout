@@ -37,8 +37,8 @@ class Paddle(pygame.sprite.Sprite):
         self.image.fill((0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
-    def move_to(self, x, y):
-        self.rect.center = (x, y)
+    def setX(self, x):
+        self.rect.centerx = x
 
 
 def hsv2rgb(h, s, v):
@@ -135,7 +135,7 @@ while is_running:
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONUP:
                 ballvel = pygame.math.Vector2(mpos[0] - ball.x, mpos[1] - ball.y)
-                ballvel.scale_to_length(700)
+                ballvel.scale_to_length(500)
                 game_state = 2
         mpos = pygame.mouse.get_pos()
         draw()
@@ -163,7 +163,7 @@ while is_running:
             and paddle.rect.right >= ball.rect.left
             and ball.rect.bottom >= paddle.rect.top
         ):
-            ballvel.x += paddle_vel*(1/time_delta)/10
+            ballvel.x += paddle_vel*(1/time_delta)/20
             ballvel.y = -ballvel.y
 
         if ball.rect.right > WIN_WIDTH or ball.rect.left < 0:
@@ -178,7 +178,7 @@ while is_running:
                 ball.move(0, -20)
                 hp -= 1
 
-        paddle.move_to(*mpos[0])
+        paddle.setX(mpos[0])
         paddle_vel = mpos[0] - lastx
         ball.move(ballvel.x * time_delta, ballvel.y * time_delta)
         lastx = paddle.rect.centerx
