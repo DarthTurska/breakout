@@ -178,7 +178,7 @@ while is_running:
                 ball.move(0, -20)
                 hp -= 1
 
-        paddle.move_to(mpos[0])
+        paddle.move_to(*mpos[0])
         paddle_vel = mpos[0] - lastx
         ball.move(ballvel.x * time_delta, ballvel.y * time_delta)
         lastx = paddle.rect.centerx
