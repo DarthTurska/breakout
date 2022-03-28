@@ -10,8 +10,7 @@ class Brick(pygame.sprite.Sprite):
         super().__init__(groups)
         self.image = pygame.Surface(size)
         self.image.fill(color)
-        self.rect = self.image.get_rect()
-        self.rect.topleft = pos
+        self.rect = self.image.get_rect(topleft=pos)
 
 
 class Ball(pygame.sprite.Sprite):
