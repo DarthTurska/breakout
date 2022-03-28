@@ -18,14 +18,13 @@ class Ball(pygame.sprite.Sprite):
         super().__init__(groups)
         self.image = pygame.image.load(os.path.join("data", "ball.png"))
         self.rect = self.image.get_rect(center=pos)
-        self.x = pos[0]
-        self.y = pos[1]
+        self.old_rect=self.rect.copy()
+        self.vel = pygame.math.Vector2(0, 0)       
+        self.pos = pygame.math.Vector2(self.rect.topleft)
 
-    def move(self, dx, dy):
-        self.x += dx
-        self.y += dy
-        self.rect.center = (self.x, self.y)
-
+    def update(self, dt):
+        self.pos+=self.vel*dt
+        self.rect.topleft=(round(self.pos.x), round(self.pos.y))
 
 class Paddle(pygame.sprite.Sprite):
     def __init__(self, pos, size, groups):
@@ -44,7 +43,7 @@ def hsv2rgb(h, s, v):
 def draw():
     win.fill((0, 0, 0))
     all_sprites.draw(win)
-    for i in range(hp + 1):
+    for i in range(hp):
         win.blit(heart, (WIN_WIDTH - i * 21 - 25, WIN_HEIGHT - 25))
 
 def make_button(w, h, x, y, text):
@@ -94,6 +93,7 @@ game_state = 0
 clock = pygame.time.Clock()
 
 while is_running:
+    mpos = pygame.mouse.get_pos()
     time_delta = clock.tick(240) / 1000.0
     if pygame.event.get(eventtype=pygame.QUIT):
         is_running = False
@@ -107,7 +107,7 @@ while is_running:
                         all_sprites = pygame.sprite.Group()
                         paddle = Paddle((WIN_WIDTH / 2, WIN_HEIGHT-20), (70, 8), all_sprites)
                         ball = Ball((paddle.rect.centerx, paddle.rect.top-10), all_sprites)
-                        hp = 2      
+                        hp = 3      
                         create_level(levels[id])
                         game_state = 1
                         lastx = paddle.rect.centerx
@@ -123,25 +123,25 @@ while is_running:
     elif game_state == 1:
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONUP:
-                ballvel = pygame.math.Vector2(mpos[0] - ball.x, mpos[1] - ball.y)
-                ballvel.scale_to_length(500)
+                ball.vel= pygame.math.Vector2(mpos[0] - ball.pos.x, mpos[1] - ball.pos.y)                 
+                ball.vel.scale_to_length(500)
                 game_state = 2
-        mpos = pygame.mouse.get_pos()
+        
         draw()
         pygame.draw.aaline(win, (255, 255, 255), mpos, ball.rect.center)
 
     # main logic
 
     elif game_state == 2:
-        mpos = pygame.mouse.get_pos()
+
         for brick in bricks:
             if brick.rect.colliderect(ball):
                 dx = abs(brick.rect.centerx - ball.rect.centerx)
                 dy = abs(brick.rect.centery - ball.rect.centery)
                 if dy > dx:
-                    ballvel.y = -ballvel.y
+                    ball.vel.y = -ball.vel.y
                 else:
-                    ballvel.x = -ballvel.x
+                    ball.vel.x = -ball.vel.x
                 brick.kill()
                 break
 
@@ -151,24 +151,24 @@ while is_running:
             and paddle.rect.right >= ball.rect.left
             and ball.rect.bottom >= paddle.rect.top
         ):
-            ballvel.x += paddle_vel*(1/time_delta)/20
-            ballvel.y = -ballvel.y
+            ball.vel.x += paddle_vel*(1/time_delta)/20
+            ball.vel.y = -ball.vel.y
 
         if ball.rect.right > WIN_WIDTH or ball.rect.left < 0:
-            ballvel.x = -ballvel.x
+            ball.vel.x = -ball.vel.x
         if ball.rect.top <= 0:
-            ballvel.y = -ballvel.y
+            ball.vel.y = -ball.vel.y
         if ball.rect.centery >= WIN_HEIGHT:
             if hp <= 0:
                 game_state = 0
             else:
                 game_state = 1
-                ball.move(0, -20)
+                ball.pos.y-=30
                 hp -= 1
 
         paddle.setX(mpos[0])
         paddle_vel = mpos[0] - lastx
-        ball.move(ballvel.x * time_delta, ballvel.y * time_delta)
+        ball.update(time_delta)
         lastx = paddle.rect.centerx
         draw()
-    pygame.display.flip()
+    pygame.display.update()
