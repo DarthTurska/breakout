@@ -1,28 +1,28 @@
 
+from ntpath import join
 import pygame
 import pygame_gui
 import colorsys
 from level_loading import load_levels
-
+import os
 
 
 class Brick(pygame.sprite.Sprite):
-    def __init__(self, pos, w, h, color):
-        super().__init__()
-        self.image = pygame.Surface((w, h))
+    def __init__(self, pos, size, color, groups):
+        super().__init__(groups)
+        self.image = pygame.Surface(size)
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.rect.topleft = pos
 
 
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.image = pygame.image.load("ball.png")
-        self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
-        self.x = x
-        self.y = y
+    def __init__(self, pos, groups):
+        super().__init__(groups)
+        self.image = pygame.image.load(os.path.join("data", "ball.png"))
+        self.rect = self.image.get_rect(center=pos)
+        self.x = pos[0]
+        self.y = pos[1]
 
     def move(self, dx, dy):
         self.x += dx
@@ -31,12 +31,11 @@ class Ball(pygame.sprite.Sprite):
 
 
 class Paddle(pygame.sprite.Sprite):
-    def __init__(self, x, y, w, h):
-        super().__init__()
-        self.image = pygame.Surface((w, h))
-        self.image.fill((0, 0, 0))
-        self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
+    def __init__(self, pos, size, groups):
+        super().__init__(groups)
+        self.image = pygame.Surface(size)
+        self.image.fill((255, 255, 255))
+        self.rect = self.image.get_rect(center=pos)
     def setX(self, x):
         self.rect.centerx = x
 
@@ -47,10 +46,7 @@ def hsv2rgb(h, s, v):
 
 def draw():
     win.fill((0, 0, 0))
-
     all_sprites.draw(win)
-
-    pygame.draw.rect(win, (255, 255, 255), paddle)
     for i in range(hp + 1):
         win.blit(heart, (WIN_WIDTH - i * 21 - 25, WIN_HEIGHT - 25))
 
@@ -59,17 +55,13 @@ def make_button(w, h, x, y, text):
     rect.center = (x, y - rect.width)
     return pygame_gui.elements.UIButton(relative_rect=rect, text=text, manager=manager)
 
-def createLevel(level):
+def create_level(level):
     x = y = 0
     color = 0
     for row in level:
-        for col in row:
-            if col == "1":
-                brick = Brick(
-                    (x, y), WIN_WIDTH / len(row), 25, hsv2rgb(color / len(row), 1, 1)
-                )
-                bricks.add(brick)
-                all_sprites.add(brick)
+        for char in row:
+            if char == "1":
+                Brick((x, y), (WIN_WIDTH / len(row), 25), hsv2rgb(color / len(row), 1, 1), (bricks, all_sprites))
             x += WIN_WIDTH / len(row)
             color += 1
         y += 25
@@ -88,10 +80,10 @@ pygame.display.set_caption("BREAKOUT")
 
 
 
-heart = pygame.transform.scale2x(pygame.image.load("heart.png"))
+heart = pygame.transform.scale2x(pygame.image.load(os.path.join("data", "heart.png")))
 
 levels = load_levels()
-manager = pygame_gui.UIManager((WIN_WIDTH, WIN_HEIGHT), "theme.json")
+manager = pygame_gui.UIManager((WIN_WIDTH, WIN_HEIGHT), os.path.join("data", "theme.json"))
 
 buttons = [
     make_button(100, 50, WIN_WIDTH / 2, WIN_HEIGHT / 2 - 100, "Level 1"),
@@ -114,12 +106,12 @@ while is_running:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 for id, button in enumerate(buttons):
                     if event.ui_element == button:
-                        paddle = Paddle(WIN_WIDTH / 2, WIN_HEIGHT-20, 70, 8)
-                        ball = Ball(paddle.rect.centerx, paddle.rect.top-10)
-                        hp = 2
                         bricks = pygame.sprite.Group()
-                        all_sprites = pygame.sprite.Group(ball)
-                        createLevel(levels[id])
+                        all_sprites = pygame.sprite.Group()
+                        paddle = Paddle((WIN_WIDTH / 2, WIN_HEIGHT-20), (70, 8), all_sprites)
+                        ball = Ball((paddle.rect.centerx, paddle.rect.top-10), all_sprites)
+                        hp = 2      
+                        create_level(levels[id])
                         game_state = 1
                         lastx = paddle.rect.centerx
 
@@ -140,7 +132,6 @@ while is_running:
         mpos = pygame.mouse.get_pos()
         draw()
         pygame.draw.aaline(win, (255, 255, 255), mpos, ball.rect.center)
-        pygame.draw.rect(win, (255, 255, 255), (mpos[0] - 2, mpos[1] - 2, 4, 4))
 
     # main logic
 
