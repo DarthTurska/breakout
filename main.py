@@ -55,6 +55,7 @@ class Ball(pygame.sprite.Sprite):
                         sprite.kill()
 
     def window_collision(self,direction):
+        global hp, game_state
         if direction == 'horizontal':
             if self.rect.left < 0:
                 self.rect.left = 0
@@ -72,13 +73,11 @@ class Ball(pygame.sprite.Sprite):
                 self.vel.y *= -1
             if self.rect.bottom > WIN_HEIGHT:
                 self.rect.bottom = WIN_HEIGHT
-                self.pos.y = self.rect.y
-                self.vel.y *= -1
                 if hp <= 0:
                     game_state = 0
                 else:
                     game_state = 1
-                    self.pos.y-=30
+                    self.pos.y-=20
                     hp -= 1
 
 
@@ -167,7 +166,6 @@ game_state = 0
 clock = pygame.time.Clock()
 
 while is_running:
-    mpos = pygame.mouse.get_pos()
     time_delta = clock.tick(240) / 1000.0
     if pygame.event.get(eventtype=pygame.QUIT):
         is_running = False
@@ -195,6 +193,7 @@ while is_running:
     # Shooting the ball
 
     elif game_state == 1:
+        mpos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONUP:
                 ball.vel= pygame.math.Vector2(mpos[0] - ball.pos.x, mpos[1] - ball.pos.y)                 
